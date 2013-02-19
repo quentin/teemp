@@ -1,4 +1,40 @@
-teemp
-=====
+#!/bin/bash
 
-redirects GNU tee outputs to a shared memory directory
+# redirect to shared memory filesystem
+tmpdir=/dev/shm/teemp.$USER
+
+# file path mangle function
+mangler=sha1sum
+
+mkdir -p $tmpdir
+
+for file in $*
+do
+  case $file in
+  --help)
+    exec tee --help
+    exit 128
+    ;;
+  
+  --version)
+    exec tee --version
+    exit 128
+    ;;
+
+  -*)
+    ;;
+
+  *)
+    dirn=$(dirname $file)
+    basen=$(basename $file)
+    absfile=$(cd $dirn && echo $PWD/$basen)
+    
+    tmpfile=$(echo $absfile | $mangler | cut -d' ' -f 1)
+    touch $tmpdir/$tmpfile
+    ln -f -s $tmpdir/$tmpfile $absfile
+    ;;
+  esac
+done
+
+exec tee $*
+exit 128
