@@ -1,10 +1,44 @@
 #!/usr/bin/env bash
 
+##
+# Default configuration
+#
+
+# the actual tee command
+teebin=tee
+
 # redirect to shared memory filesystem
 tmpdir=/dev/shm/teemp.$USER
 
 # file path mangle function
-mangler=sha1sum
+mangler=shasum
+# interesting bytes in the mangle function output (GNU cut 'LIST' style)
+manglebytes=1-40
+
+##
+# Read configuration files
+#
+
+# read system configuration
+if [ -r /etc/.teemp ]; then 
+  # bash 4.0 only
+  #source <(egrep -o '^(teebin|tmpdir|mangler|manglebytes)=.*' $PWD/.teemp)
+  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes)=.*' /etc/.teemp)
+fi
+
+# read user configuration
+if [ -r $HOME/.teemp ]; then
+  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes)=.*' $HOME/.teemp)
+fi
+
+# read local configuration
+if [ -r $PWD/.teemp ]; then
+  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes)=.*' $PWD/.teemp)
+fi
+
+##
+# TEEMP
+#
 
 mkdir -p $tmpdir
 
@@ -12,12 +46,12 @@ for file in $*
 do
   case $file in
   --help)
-    exec tee --help
+    exec $teebin --help
     exit 128
     ;;
   
   --version)
-    exec tee --version
+    exec $teebin --version
     exit 128
     ;;
 
@@ -29,12 +63,12 @@ do
     basen=$(basename $file)
     absfile=$(cd $dirn && echo $PWD/$basen)
     
-    tmpfile=$(echo $absfile | $mangler | cut -d' ' -f 1)
+    tmpfile=$(echo $absfile | $mangler | cut -b $manglebytes)
     touch $tmpdir/$tmpfile
     ln -f -s $tmpdir/$tmpfile $absfile
     ;;
   esac
 done
 
-exec tee $*
+exec $teebin $*
 exit 128
