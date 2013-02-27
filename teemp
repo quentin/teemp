@@ -7,8 +7,19 @@
 # the actual tee command
 teebin=tee
 
-# redirect to shared memory filesystem
-tmpdir=/dev/shm/teemp.$USER
+case $OSTYPE in
+darwin*)
+  # a sector of ram disk is 512 bytes
+  # allocates 100MB = 512B * 195312 
+  preparedir='if [ ! -e /Volumes/ramdisk ]; then diskutil erasevolume HFS+ "ramdisk" `hdiutil attach -nomount ram://195312` || exit 124; fi'
+  tmpdir=/Volumes/ramdisk/teemp.$USER
+  ;;
+linux*)
+  # redirect to shared memory filesystem
+  preparedir='if [ ! -d /dev/shm ]; then echo "/dev/shm" not found 1>&2; exit 126; fi' 
+  tmpdir=/dev/shm/teemp.$USER
+  ;;
+esac
 
 # file path mangle function
 mangler=shasum
@@ -23,23 +34,24 @@ manglebytes=1-40
 if [ -r /etc/.teemp ]; then 
   # bash 4.0 only
   #source <(egrep -o '^(teebin|tmpdir|mangler|manglebytes)=.*' $PWD/.teemp)
-  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes)=.*' /etc/.teemp)
+  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes|preparedir)=.*' /etc/.teemp)
 fi
 
 # read user configuration
 if [ -r $HOME/.teemp ]; then
-  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes)=.*' $HOME/.teemp)
+  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes|preparedir)=.*' $HOME/.teemp)
 fi
 
 # read local configuration
 if [ -r $PWD/.teemp ]; then
-  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes)=.*' $PWD/.teemp)
+  source /dev/stdin <<< $(egrep -o '^(teebin|tmpdir|mangler|manglebytes|preparedir)=.*' $PWD/.teemp)
 fi
 
 ##
 # TEEMP
 #
 
+eval $preparedir > /dev/null
 mkdir -p $tmpdir
 
 for file in $*

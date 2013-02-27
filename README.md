@@ -3,7 +3,7 @@ teemp
 
 Redirects GNU tee outputs to a shared memory directory.
 
-Provides symlinks to GNU tee, backed by files stored in /dev/shm/teemp.$USER/ .
+Provides symlinks to GNU tee, backed by files stored in a ramdisk.
 Actual data file name is generated using the SHA1 signature of the absolute path of the symlink file. 
 
     $ ls | teemp ~/out
