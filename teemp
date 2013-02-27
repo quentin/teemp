@@ -51,22 +51,54 @@ fi
 # TEEMP
 #
 
+# arguments parsing
+OPTIND=1
+while getopts "hb:d:m:x:" OPTION
+do
+  case $OPTION in
+  h) 
+    echo USAGE: teemp [OPTION]... [FILE]...
+    echo
+    echo '   -h    show this message'
+    echo '   -b    sets manglebytes'
+    echo '   -d    sets tmpdir'
+    echo '   -m    sets mangler'
+    echo '   -p    sets preparedir'
+    echo '   -x    sets teebin'
+    echo
+    echo 'Written by Quentin Sabah.'
+    exit 0
+    ;;
+
+  d)
+    tmpdir=$OPTARG
+    ;;
+
+  m)
+    mangler=$OPTARG
+    ;;
+
+  b)
+    manglebytes=$OPTARG
+    ;;
+
+  p)
+    preparedir=$OPTARG
+    ;;
+  
+  x)
+    teebin=$OPTARG
+    ;;
+  esac
+done
+shift $(($OPTIND - 1))
+
 eval $preparedir > /dev/null
 mkdir -p $tmpdir
 
 for file in $*
 do
   case $file in
-  --help)
-    exec $teebin --help
-    exit 128
-    ;;
-  
-  --version)
-    exec $teebin --version
-    exit 128
-    ;;
-
   -*)
     ;;
 
