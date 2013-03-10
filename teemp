@@ -53,7 +53,7 @@ fi
 
 # arguments parsing
 OPTIND=1
-while getopts "hb:d:m:x:" OPTION
+while getopts "hb:d:m:p:x:" OPTION
 do
   case $OPTION in
   h) 
